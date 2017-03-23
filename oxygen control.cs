@@ -10,7 +10,6 @@ string gatewaysExternalPrefix = "EXT";
 //must be a pair!
 string exceptDoorsPrefix = "External door";
 string doorLampsPrefix = "Door Light";
-string controlTankName = "Баллон с кислородом";
 string gensCommonName = "Генератор кислорода";
 
 
@@ -170,12 +169,24 @@ void setScreensText(string text,Color color)
 void Main()
 {
     IMyAirVent vent = (IMyAirVent) GridTerminalSystem.GetBlockWithName(controlVentName);
-    IMyOxygenTank tank = (IMyOxygenTank) GridTerminalSystem.GetBlockWithName(controlTankName);
+    /*IMyOxygenTank tank = (IMyOxygenTank) GridTerminalSystem.GetBlockWithName(controlTankName);*/
+
+    List<IMyTerminalBlock> tanks = new List<IMyTerminalBlock>(); 
+    GridTerminalSystem.GetBlocksOfType<IMyOxygenTank>(tanks);
+    float tp = 0;
+    int tanksCount = 0;
+    for(int i = 0; i < tanks.Count; i++)
+    {  
+        IMyOxygenTank tank = (IMyOxygenTank) tanks[i];  
+        if(tank.IsFunctional && tank.IsWorking)  
+        		{
+            tp += tank.GetOxygenLevel()*100;
+            tanksCount++;
+        		}  
+    }
+    if (tanksCount != 0) tp = tp/tanksCount; else tp = 0;
     string pressure  = "0.00%";
     int pr =0;
-    pressure = tank.DetailedInfo.Split(new string[] { "\n" },StringSplitOptions.None)[2].Substring(8);
-    int tp = Convert.ToInt32(pressure.Substring(0,pressure.IndexOf(".")));
-    pressure = "0.00%";
     Color color = Color.Red;
     if(vent.DetailedInfo.IndexOf("Not pressurized") == -1)
     {
@@ -204,8 +215,8 @@ void Main()
         }
     }
     closeDoors(pr < 60,pr > 10);
-    swithGens((pr+tp) < 99);
-    setScreensText(" Oxygen: "+pressure+"\r\n Tanks: "+
-        tank.DetailedInfo.Split(new string[] { "\n" },StringSplitOptions.None)[2].Substring(8)+tpstate,color);
+    swithGens((pr+tp) < 120);
+    double lol = Convert.ToDouble(Convert.ToInt32(tp*1000))/1000;
+    setScreensText(" Oxygen: "+pressure+"\r\n Tanks: "+Convert.ToString(lol)+"%"+tpstate,color);
     return;
 }
